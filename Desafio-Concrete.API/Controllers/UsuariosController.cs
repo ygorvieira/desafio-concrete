@@ -5,11 +5,13 @@ using System.Net;
 using System.Threading.Tasks;
 using Desafio_Concrete.Domain.Entities;
 using Desafio_Concrete.Domain.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Desafio_Concrete.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuariosController : ControllerBase
@@ -20,36 +22,69 @@ namespace Desafio_Concrete.API.Controllers
         [Route("SignUp/")]
         public JsonResult SignUp()
         {
-            var status = HttpStatusCode.OK;
             string mensagem = "";
             Usuario usuario = new Usuario();
-            usuario = _usuarioRepository.SignUp();
 
-            return new JsonResult(new { statusCode = status, mensagem, usuario });
+            try
+            {
+                mensagem = "Operação realizada com sucesso.";
+                usuario = _usuarioRepository.SignUp(usuario);
+
+                return new JsonResult(new { statusCode = HttpStatusCode.OK, mensagem, usuario });
+            }
+            catch (Exception e)
+            {
+                mensagem = "Erro ao efetuar operação";
+
+                return new JsonResult(new { statusCode = HttpStatusCode.InternalServerError, mensagem});
+                throw e;
+            }
         }
 
         [HttpPost]
         [Route("Login/")]
         public JsonResult Login(string email, string senha)
         {
-            var status = HttpStatusCode.OK;
             string mensagem = "";
             Usuario usuario = new Usuario();
-            usuario = _usuarioRepository.Login(email, senha);
 
-            return new JsonResult(new { statusCode = status, mensagem, usuario });
+            try
+            {
+                mensagem = "Login efetuado com sucesso.";
+                usuario = _usuarioRepository.Login(email, senha);
+
+                return new JsonResult(new { statusCode = HttpStatusCode.OK, mensagem, usuario });
+            }
+            catch (Exception e)
+            {
+                mensagem = "Erro ao efetuar login";
+                return new JsonResult(new { statusCode = HttpStatusCode.InternalServerError, mensagem});
+                throw e;
+            }
         }
 
         [HttpPost]
         [Route("Profile/")]
-        public JsonResult Profile(int usuarioId)
+        public JsonResult Profile(string email, string senha)
         {
-            var status = HttpStatusCode.OK;
             string mensagem = "";
             Usuario usuario = new Usuario();
-            usuario = _usuarioRepository.Profile(usuarioId);
 
-            return new JsonResult(new { statusCode = status, mensagem, usuario });
+            try
+            {
+                mensagem = "Perfil de usuário localizado com sucesso.";
+                usuario = _usuarioRepository.Profile(email, senha);
+
+                return new JsonResult(new { statusCode = HttpStatusCode.OK, mensagem, usuario });
+
+            }
+            catch (Exception e)
+            {
+                mensagem = "Erro ao obter perfil de usuário.";
+
+                return new JsonResult(new { statusCode = HttpStatusCode.InternalServerError, mensagem});
+                throw e;
+            }
         }
     }
 }
