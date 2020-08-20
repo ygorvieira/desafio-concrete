@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Desafio_Concrete.Domain.Entities;
 using Desafio_Concrete.Domain.Repository;
@@ -46,7 +47,7 @@ namespace Desafio_Concrete.API.Controllers
         public JsonResult Login(string email, string senha)
         {
             string mensagem = "";
-            Usuario usuario = new Usuario();
+            Usuario usuario = new Usuario();            
 
             try
             {

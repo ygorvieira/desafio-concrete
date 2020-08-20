@@ -10,5 +10,6 @@ namespace Desafio_Concrete.Domain.Repository
         Usuario Profile(string email, string senha);
 
         List<Usuario> GetUsers();
+        string GetToken(string email, string senha);
     }
 }
