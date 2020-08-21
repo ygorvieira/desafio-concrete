@@ -39,7 +39,7 @@ namespace Desafio_Concrete.Domain.Repository
 
         public List<Usuario> GetUsers()
         {
-            using(var connection = new SqlConnection(connectionString))
+            using (var connection = new SqlConnection(connectionString))
             {
                 connection.Open();
                 var query = "SELECT * FROM USERS";
@@ -52,7 +52,7 @@ namespace Desafio_Concrete.Domain.Repository
         public Usuario Login(string email, string senha)
         {
             var usuario = GetUsers().FirstOrDefault(x => x.Email.Equals(email));
-            
+
             try
             {
                 if (usuario == null)
@@ -82,29 +82,32 @@ namespace Desafio_Concrete.Domain.Repository
         {
             try
             {
-                if (GetUsers().FirstOrDefault(x => x.Email.Equals(usuario.Email.Trim())) == null) 
+                using (var connection = new SqlConnection(connectionString))
                 {
+                    usuario.ID = Guid.NewGuid();
+                    usuario.Token = GetToken(usuario.Email, usuario.Senha);
+                    usuario.DataCriacao = DateTime.Today;
+                    usuario.DataAtualizacao = DateTime.Today;
+                    usuario.UltimoLogin = DateTime.Today;
 
-                }
-                else
-                {
-                    using (var connection = new SqlConnection(connectionString))
+                    connection.Open();
+                    var queryUsuario = string.Format(@"INSERT INTO USERS(Id, Nome, Email, Senha, DataCriacao, DataAtualizacao, UltimoLogin, Token) VALUES({0}, 
+                                                            @Nome, @Email, @Senha, {1}, {2}, {3}, {4})", usuario.ID, usuario.DataCriacao, usuario.DataAtualizacao,
+                                                        usuario.UltimoLogin, usuario.Token);
+
+                    connection.Execute(queryUsuario, usuario);
+
+                    foreach (var item in usuario.Telefones)
                     {
-                        usuario.Token = GetToken(usuario.Email, usuario.Senha);
-                        usuario.DataCriacao = DateTime.Today;
-                        usuario.DataAtualizacao = DateTime.Today;
-                        usuario.UltimoLogin = DateTime.Today;
-
                         connection.Open();
-                        var query = @"INSERT INTO USERS() VALUES()";
-                        connection.Execute(query, usuario);
+                        var queryTelefones = @"INSERT INTO TELEFONES() VALUES()";
+                        connection.Execute(queryTelefones, usuario);
                     }
-
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                return null;
+                throw e;
             }
 
             return usuario;

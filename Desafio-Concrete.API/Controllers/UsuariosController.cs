@@ -28,9 +28,14 @@ namespace Desafio_Concrete.API.Controllers
 
             try
             {
+                if (_usuarioRepository.GetUsers().FirstOrDefault(x => x.Email.Equals(usuario.Email.Trim())) != null)
+                {
+                    mensagem = "Usuário já cadastrado.";
+                    return new JsonResult(new { statusCode = HttpStatusCode.BadRequest, mensagem});
+                }
+
                 mensagem = "Operação realizada com sucesso.";
                 usuario = _usuarioRepository.SignUp(usuario);
-
                 return new JsonResult(new { statusCode = HttpStatusCode.OK, mensagem, usuario });
             }
             catch (Exception e)
