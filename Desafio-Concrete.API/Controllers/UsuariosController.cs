@@ -30,7 +30,7 @@ namespace Desafio_Concrete.API.Controllers
             {
                 if (_usuarioRepository.GetUsers().FirstOrDefault(x => x.Email.Equals(usuario.Email.Trim())) != null)
                 {
-                    mensagem = "Usuário já cadastrado.";
+                    mensagem = "E-mail já existente";
                     return new JsonResult(new { statusCode = HttpStatusCode.BadRequest, mensagem});
                 }
 
@@ -51,15 +51,24 @@ namespace Desafio_Concrete.API.Controllers
         [Route("Login/")]
         public JsonResult Login(string email, string senha)
         {
+            var status = HttpStatusCode.OK;
             string mensagem = "";
             Usuario usuario = new Usuario();            
 
             try
-            {
-                mensagem = "Login efetuado com sucesso.";
-                usuario = _usuarioRepository.Login(email, senha);
+            {                
+                usuario = _usuarioRepository.Login(email, senha, ref status);
 
-                return new JsonResult(new { statusCode = HttpStatusCode.OK, mensagem, usuario });
+                if (usuario != null)
+                {
+                    mensagem = "Login efetuado com sucesso.";
+                    return new JsonResult(new { statusCode = status, mensagem, usuario });
+                }
+                else
+                {
+                    mensagem = "Usuário e/ou senha inválidos";
+                    return new JsonResult(new { statusCode = status, mensagem, usuario });
+                }
             }
             catch (Exception e)
             {
@@ -73,15 +82,39 @@ namespace Desafio_Concrete.API.Controllers
         [Route("Profile/")]
         public JsonResult Profile(string email, string senha)
         {
+            var status = HttpStatusCode.OK;
             string mensagem = "";
             Usuario usuario = new Usuario();
 
             try
             {
-                mensagem = "Perfil de usuário localizado com sucesso.";
-                usuario = _usuarioRepository.Profile(email, senha);
+                usuario = _usuarioRepository.Profile(email, senha, ref status);
 
-                return new JsonResult(new { statusCode = HttpStatusCode.OK, mensagem, usuario });
+                if (usuario.Token == null)
+                {
+                    mensagem = "Não autorizado.";
+                    return new JsonResult(new { statusCode = HttpStatusCode.Forbidden, mensagem, usuario });
+                }
+                else
+                {
+                    switch (status)
+                    {
+                        case HttpStatusCode.Forbidden:
+                            mensagem = "Não autorizado.";
+                            break;
+                        case HttpStatusCode.GatewayTimeout:
+                            mensagem = "Sessão inválida";
+                            break;
+                        case HttpStatusCode.NotFound:
+                            mensagem = "Usuário e/ou senha inválidos.";
+                            break;
+                        default:
+                            mensagem = "Perfil de usuário localizado com sucesso.";
+                            break;
+                    }
+
+                    return new JsonResult(new { statusCode = status, mensagem, usuario });
+                }              
 
             }
             catch (Exception e)

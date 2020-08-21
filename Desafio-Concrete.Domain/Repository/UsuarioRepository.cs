@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Dapper;
 using Desafio_Concrete.Domain.Entities;
@@ -49,15 +52,22 @@ namespace Desafio_Concrete.Domain.Repository
             }
         }
 
-        public Usuario Login(string email, string senha)
+        public Usuario Login(string email, string senha, ref HttpStatusCode status)
         {
+            var hash = new Hash(SHA512.Create());
             var usuario = GetUsers().FirstOrDefault(x => x.Email.Equals(email));
 
             try
             {
                 if (usuario == null)
                 {
-
+                    status = HttpStatusCode.NotFound;
+                    return null;
+                }
+                if (!hash.VerificarSenha(hash.CriptografarSenha(senha), usuario.Senha))
+                {
+                    status = HttpStatusCode.Forbidden;
+                    return null;
                 }
                 else
                 {
@@ -73,34 +83,66 @@ namespace Desafio_Concrete.Domain.Repository
             return usuario;
         }
 
-        public Usuario Profile(string email, string senha)
+        public Usuario Profile(string email, string senha, ref HttpStatusCode status)
         {
-            throw new System.NotImplementedException();
+            var hash = new Hash(SHA512.Create());
+            var usuario = GetUsers().FirstOrDefault(x => x.Email.Equals(email));
+
+            try
+            {
+                if (usuario == null)
+                {
+                    status = HttpStatusCode.NotFound;
+                    return null;
+                }
+                if (!hash.VerificarSenha(hash.CriptografarSenha(senha), usuario.Senha))
+                {
+                    status = HttpStatusCode.Forbidden;
+                    return null;
+                }
+
+                CultureInfo culture = new CultureInfo("pt-BR");
+                TimeSpan intervalo = DateTime.Now - usuario.UltimoLogin;
+
+                if (decimal.Round(decimal.Parse(intervalo.TotalMinutes.ToString())) >= 30)
+                {
+                    status = HttpStatusCode.GatewayTimeout;
+                    return null;
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+
+            return usuario;
         }
 
         public Usuario SignUp(Usuario usuario)
         {
+            var hash = new Hash(SHA512.Create());
             try
             {
                 using (var connection = new SqlConnection(connectionString))
                 {
-                    usuario.ID = Guid.NewGuid();
+                    usuario.UsuarioGuid = Guid.NewGuid();
                     usuario.Token = GetToken(usuario.Email, usuario.Senha);
+                    usuario.Senha = hash.CriptografarSenha(usuario.Senha);                    
                     usuario.DataCriacao = DateTime.Today;
                     usuario.DataAtualizacao = DateTime.Today;
                     usuario.UltimoLogin = DateTime.Today;
 
                     connection.Open();
-                    var queryUsuario = string.Format(@"INSERT INTO USERS(Id, Nome, Email, Senha, DataCriacao, DataAtualizacao, UltimoLogin, Token) VALUES({0}, 
-                                                            @Nome, @Email, @Senha, {1}, {2}, {3}, {4})", usuario.ID, usuario.DataCriacao, usuario.DataAtualizacao,
-                                                        usuario.UltimoLogin, usuario.Token);
+                    var queryUsuario = string.Format(@"INSERT INTO USERS(Guid, Nome, Email, Senha, DataCriacao, DataAtualizacao, UltimoLogin, Token) VALUES({0}, 
+                                                            @Nome, @Email, {1}, {2}, {3}, {4}, {5})", usuario.UsuarioGuid, usuario.Senha, usuario.DataCriacao, 
+                                                            usuario.DataAtualizacao, usuario.UltimoLogin, usuario.Token);
 
                     connection.Execute(queryUsuario, usuario);
 
                     foreach (var item in usuario.Telefones)
                     {
                         connection.Open();
-                        var queryTelefones = @"INSERT INTO TELEFONES() VALUES()";
+                        var queryTelefones = string.Format(@"INSERT INTO TELEFONES(Numero, DDD, UsuarioID) VALUES(@Numero, @DDD, {0})", usuario.UsuarioGuid);
                         connection.Execute(queryTelefones, usuario);
                     }
                 }
