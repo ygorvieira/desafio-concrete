@@ -7,6 +7,6 @@ namespace Desafio_Concrete.Domain.Entities
         public int ID { get; set; }
         public long Numero { get; set; }
         public int DDD { get; set; }
-        public Guid UsuarioGuid { get; set; }
+        public int UsuarioID { get; set; }
     }
 }

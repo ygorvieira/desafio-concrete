@@ -16,7 +16,7 @@ namespace Desafio_Concrete.Domain.Repository
 {
     public class UsuarioRepository : IUsuarioRepository
     {
-        private readonly string connectionString = "";
+        private readonly string connectionString = "Data Source=den1.mssql8.gear.host; Initial Catalog=desafioconcrete; User Id=desafioconcrete; Password=Uf2rX-oZ!Oi6";
 
         public string GetToken(string email, string senha)
         {
@@ -125,7 +125,6 @@ namespace Desafio_Concrete.Domain.Repository
             {
                 using (var connection = new SqlConnection(connectionString))
                 {
-                    usuario.UsuarioGuid = Guid.NewGuid();
                     usuario.Token = GetToken(usuario.Email, usuario.Senha);
                     usuario.Senha = hash.CriptografarSenha(usuario.Senha);                    
                     usuario.DataCriacao = DateTime.Today;
@@ -133,17 +132,26 @@ namespace Desafio_Concrete.Domain.Repository
                     usuario.UltimoLogin = DateTime.Today;
 
                     connection.Open();
-                    var queryUsuario = string.Format(@"INSERT INTO USERS(Guid, Nome, Email, Senha, DataCriacao, DataAtualizacao, UltimoLogin, Token) VALUES({0}, 
-                                                            @Nome, @Email, {1}, {2}, {3}, {4}, {5})", usuario.UsuarioGuid, usuario.Senha, usuario.DataCriacao, 
-                                                            usuario.DataAtualizacao, usuario.UltimoLogin, usuario.Token);
+                    var queryUsuario = @"INSERT INTO USERS(Nome, Email, Senha, DataCriacao, DataAtualizacao, UltimoLogin, Token) VALUES(@Nome, 
+                                                            @Email, @Senha, @DataCriacao, @DataAtualizacao, @UltimoLogin, @Token)";
 
                     connection.Execute(queryUsuario, usuario);
 
                     foreach (var item in usuario.Telefones)
-                    {
-                        connection.Open();
-                        var queryTelefones = string.Format(@"INSERT INTO TELEFONES(Numero, DDD, UsuarioID) VALUES(@Numero, @DDD, {0})", usuario.UsuarioGuid);
-                        connection.Execute(queryTelefones, usuario);
+                    {                        
+                        var getUserID = "SELECT ID FROM USERS WHERE Email = '" + usuario.Email + "'";
+                        var queryID = connection.Query(getUserID).FirstOrDefault();
+                        item.UsuarioID = queryID.ID;
+
+                        var telefone = new Telefone()
+                        {
+                            Numero = item.Numero,
+                            DDD = item.DDD,
+                            UsuarioID = item.UsuarioID
+                        };
+
+                        var queryTelefones = string.Format(@"INSERT INTO TELEFONES(Numero, DDD, UsuarioID) VALUES(@Numero, @DDD, @UsuarioID)");
+                        connection.Execute(queryTelefones, telefone);
                     }
                 }
             }

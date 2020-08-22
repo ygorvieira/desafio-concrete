@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Desafio_Concrete.API.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuariosController : ControllerBase
@@ -21,10 +21,9 @@ namespace Desafio_Concrete.API.Controllers
 
         [HttpPost]
         [Route("SignUp/")]
-        public JsonResult SignUp()
+        public JsonResult SignUp(Usuario usuario)
         {
             string mensagem = "";
-            Usuario usuario = new Usuario();
 
             try
             {
