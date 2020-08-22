@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Desafio_Concrete.API.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsuariosController : ControllerBase
